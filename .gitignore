@@ -1,8 +1,29 @@
-.DS_Store
-/.build
-/Packages
-xcuserdata/
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.resolved
+*.xcodeproj
+
+# Build artifacts
+.build/
 DerivedData/
-.swiftpm/configuration/registries.json
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-.netrc
+
+# Xcode
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Environment & Logs
+.env
+*.log
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Vector data
+embeddings/
+*.vec
+glove.*.txt

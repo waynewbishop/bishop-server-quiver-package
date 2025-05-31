@@ -1,0 +1,15 @@
+openapi: 3.0.0
+info:
+  title: QuiverDB API
+  version: 1.0.0
+paths:
+  /vectors/{id}:
+    put: # upsert vector
+    get: # retrieve vector
+    delete: # remove vector
+  /vectors/text/{id}:
+    put: # upsert text (converts to vector)
+  /vectors/query:
+    post: # similarity search with vector
+  /vectors/search:
+    post: # semantic search with text
