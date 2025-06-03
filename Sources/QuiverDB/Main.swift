@@ -19,42 +19,43 @@ import ServiceLifecycle
 
 @main
 struct Entrypoint {
-    static func main() async throws {
-        let (app, serviceGroup) = try await configServer()
-        
-        // This will execute after Control-C and graceful shutdown
-        try await serviceGroup.run()
-        
-        // Log after shutdown completes
-        app.logger.notice("QuiverDB server shutdown completed successfully")
-    }
+   static func main() async throws {
+       let (app, serviceGroup) = try await configServer()
+       
+       app.logger.notice("[QuiverDB] Starting service group. Press ctrl+c to shutdown")
+       try await serviceGroup.run()
+       
+       app.logger.notice("[QuiverDB] Server shutdown completed successfully")
+   }
 }
 
 // Simple service implementation
 struct ServerService: Service {
-    var app: Application
-    
-    func run() async throws {
-        try await app.execute()
-    }
+   var app: Application
+   
+   func run() async throws {
+       try await app.execute()
+   }
 }
 
 /// Server configuration
 func configServer() async throws -> (Application, ServiceGroup) {
-    
-    let logger = Logger(label: "bishop.server.quiver.package")
-    logger.notice("[QuiverDB] Server started. Use Control+C to shut down gracefully.")
-    
-    let app = try await Vapor.Application.make()
-    
-    let serverService = ServerService(app: app)
-    let serviceGroup = ServiceGroup(
-        services: [serverService],
-        gracefulShutdownSignals: [.sigint, .sigquit],
-        cancellationSignals: [.sigterm],
-        logger: logger
-    )
-    
-    logger.notice("[QuiverDB] Starting service group")
-    return (app, serviceGroup)
+   
+   let logger = Logger(label: "bishop.server.quiver.package")
+   let app = try await Vapor.Application.make()
+   
+   // Configure middleware
+   app.middleware.use(LoggingMiddleware(logger: logger))
+   app.middleware.use(ErrorHandlingMiddleware())
+   
+   let serverService = ServerService(app: app)
+   let serviceGroup = ServiceGroup(
+       services: [serverService],
+       gracefulShutdownSignals: [.sigint, .sigterm],
+       cancellationSignals: [.sigquit],
+       logger: logger
+   )
+   
+   logger.notice("[QuiverDB] Server configured, ready to start")
+   return (app, serviceGroup)
 }

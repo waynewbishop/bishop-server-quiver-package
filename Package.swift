@@ -27,6 +27,9 @@ let package = Package(
                 .product(name: "OpenAPIVapor", package: "swift-openapi-vapor"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],
+            resources: [
+                    .copy("Resources")  // Include Resources directory
+            ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
             ]
