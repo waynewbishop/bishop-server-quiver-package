@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],
             resources: [
-                    .copy("Resources")  // Include Resources directory
+                .copy("Resources/glove.6B.50d.txt") // or .copy() for exact copy
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")

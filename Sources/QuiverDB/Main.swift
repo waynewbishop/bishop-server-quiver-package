@@ -38,24 +38,45 @@ struct ServerService: Service {
    }
 }
 
-/// Server configuration
+
 func configServer() async throws -> (Application, ServiceGroup) {
-   
-   let logger = Logger(label: "bishop.server.quiver.package")
-   let app = try await Vapor.Application.make()
-   
-   // Configure middleware
-   app.middleware.use(LoggingMiddleware(logger: logger))
-   app.middleware.use(ErrorHandlingMiddleware())
-   
-   let serverService = ServerService(app: app)
-   let serviceGroup = ServiceGroup(
-       services: [serverService],
-       gracefulShutdownSignals: [.sigint, .sigterm],
-       cancellationSignals: [.sigquit],
-       logger: logger
-   )
-   
-   logger.notice("[QuiverDB] Server configured, ready to start")
-   return (app, serviceGroup)
+    let logger = Logger(label: "bishop.server.quiver.package")
+    let app = try await Vapor.Application.make()
+    
+    // Configure middleware
+    app.middleware.use(LoggingMiddleware(logger: logger))
+    app.middleware.use(ErrorHandlingMiddleware())
+    
+    // Add a simple test route so the server has something to serve
+    app.get("health") { req in
+        return "QuiverDB Server is running!"
+    }
+    
+    // Load the GloVeService
+    guard let url = Bundle.module.url(forResource: "glove.6B.50d", withExtension: "txt", subdirectory: "Resources") else {
+        app.logger.critical("Failed to locate GloVe file: glove.6B.50d.txt")
+        throw GloVeError.fileNotFound
+    }
+    
+    guard FileManager.default.fileExists(atPath: url.path) else {
+        app.logger.critical("GloVe file exists in bundle but not accessible at path: \(url.path)")
+        throw GloVeError.fileNotFound
+    }
+    
+    // Check file size
+    let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+    if let fileSize = attributes[.size] as? Int64 {
+        app.logger.notice("[glove.6B.50d] File size: \(fileSize) bytes")
+    }
+        
+    let serverService = ServerService(app: app)
+    let serviceGroup = ServiceGroup(
+        services: [serverService],
+        gracefulShutdownSignals: [.sigint, .sigterm],
+        cancellationSignals: [.sigquit],
+        logger: logger
+    )
+    
+    logger.notice("[QuiverDB] Server configured, ready to start")
+    return (app, serviceGroup)
 }

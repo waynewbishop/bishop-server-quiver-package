@@ -48,6 +48,16 @@ public final class GloVeService {
         }
     }
     
+    /// Get vocabulary size
+    var vocabularySize: Int {
+        return embeddings.count
+    }
+    
+    //Get dimensions
+    var embeddingDimensions: Int {
+        return dimensions
+    }
+    
     /// Convert text to vector using new Quiver averaged() function
     func embedText(_ text: String) -> [Double] {
         let words = text.lowercased()
@@ -70,10 +80,6 @@ public final class GloVeService {
         return embeddings[word.lowercased()]
     }
     
-    /// Get vocabulary size
-    var vocabularySize: Int {
-        return embeddings.count
-    }
 }
 
 enum GloVeError: Error {
