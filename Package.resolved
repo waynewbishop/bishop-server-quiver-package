@@ -1,5 +1,5 @@
 {
-  "originHash" : "5ddd050156f16457a17d21729586f01359fbb20091c884b4718106f4814f31e3",
+  "originHash" : "a5ee32711ac0035bd1198e566734aea4dd627831dfe26c5c1bbbaf4a63694523",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "64ddfb97c657e2e53e8f3665a7e26e2eabbdeb94",
         "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "bishop-algorithms-swift-package",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/waynewbishop/bishop-algorithms-swift-package",
+      "state" : {
+        "revision" : "ace400434e42fae58917c713d0c13aec183c89de",
+        "version" : "0.5.2"
       }
     },
     {

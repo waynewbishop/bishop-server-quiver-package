@@ -23,6 +23,15 @@ public final class GloVeService {
         var loadedEmbeddings: [String: [Double]] = [:]
         var detectedDimensions = 0
         
+        //TODO: Loading the GloVeService should be a closed system with no calls to passed parameters.
+        //The loading of the file should be its own function, due to the complexity and potential errors.
+        
+        //TODO: How can this helper class also get access to the Vapor loggger? Do I pass an instance of the
+        //app upon initialization?
+        
+        //TODO: Do I already have some algorithms that can either
+        //load or find embeddings faster than linear time? What about loading
+        //all of them into a giant hashable structure?
         for line in content.components(separatedBy: .newlines) {
             let parts = line.split(separator: " ")
             guard parts.count > 1 else { continue }
