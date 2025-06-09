@@ -47,28 +47,15 @@ func configServer() async throws -> (Application, ServiceGroup) {
     app.middleware.use(LoggingMiddleware(logger: logger))
     app.middleware.use(ErrorHandlingMiddleware())
     
+    //load GloVeService
+    logger.info("Loading GloVeService..")
+    let glove = try await GloVeService()
+    
     // Add a simple test route so the server has something to serve
     app.get("health") { req in
         return "QuiverDB Server is running!"
     }
-    
-    // Load the GloVeService
-    guard let url = Bundle.module.url(forResource: "glove.6B.50d", withExtension: "txt", subdirectory: "Resources") else {
-        app.logger.critical("Failed to locate GloVe file: glove.6B.50d.txt")
-        throw GloVeError.fileNotFound
-    }
-    
-    guard FileManager.default.fileExists(atPath: url.path) else {
-        app.logger.critical("GloVe file exists in bundle but not accessible at path: \(url.path)")
-        throw GloVeError.fileNotFound
-    }
-    
-    // Check file size
-    let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-    if let fileSize = attributes[.size] as? Int64 {
-        app.logger.notice("[glove.6B.50d] File size: \(fileSize) bytes")
-    }
-        
+            
     let serverService = ServerService(app: app)
     let serviceGroup = ServiceGroup(
         services: [serverService],
