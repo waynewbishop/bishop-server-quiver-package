@@ -50,6 +50,33 @@ func configServer() async throws -> (Application, ServiceGroup) {
     //load GloVeService
     logger.info("Loading GloVeService..")
     let glove = try await GloVeService()
+
+    //start persistent store
+    logger.info("Staring VectorStore..")
+    let vectorStore = try await VectorStore(embeddingService: glove)
+    
+    // Test with unique IDs
+    try await vectorStore.upsertText(
+        id: "doc1",
+        text: "parrots and budgies are birds and pets",
+        metadata: ["category": "animals"]
+    )
+
+    try await vectorStore.upsertText(
+        id: "doc2",  // Different ID
+        text: "cars and trucks are vehicles",
+        metadata: ["category": "transportation"]
+    )
+
+    try await vectorStore.upsertText(
+        id: "doc3",  // Different ID
+        text: "roses and tulips are flowers",
+        metadata: ["category": "plants"]
+    )
+
+    let count = await vectorStore.count()
+    logger.info("Total documents: \(count)")  // Should show 3
+    
     
     // Add a simple test route so the server has something to serve
     app.get("health") { req in
@@ -67,3 +94,4 @@ func configServer() async throws -> (Application, ServiceGroup) {
     logger.notice("[QuiverDB] Server configured, ready to start")
     return (app, serviceGroup)
 }
+

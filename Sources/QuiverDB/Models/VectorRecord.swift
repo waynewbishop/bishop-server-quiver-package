@@ -13,9 +13,10 @@
 
 import Foundation
 
-public struct VectorRecord: Codable {
+public struct VectorRecord: Codable, Sendable {
     let id: String
     let vector: [Double]
+    let text: String
     let metadata: [String: String]
     let timestamp: Date
 }

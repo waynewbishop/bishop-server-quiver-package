@@ -13,12 +13,16 @@
 
 import Foundation
 import Quiver
+import Logging
 
 /// Simple vector database that stores vectors in memory with basic CRUD operations and JSON persistence.
 public actor VectorStore {
+
     private var vectors: [String: VectorRecord] = [:]
     private let embeddingService: GloVeService
     private let dataFilePath: String = "vectors.json"
+    
+    private let logger = Logger(label: "bishop.server.quiver.package")
     
     /// Initialize with a GloVe service and load existing vectors from file.
     init(embeddingService: GloVeService) async throws {
@@ -29,8 +33,8 @@ public actor VectorStore {
     // MARK: - Basic CRUD Operations
     
     /// Store a vector with metadata and save to file.
-    func upsert(id: String, vector: [Double], metadata: [String: String]) async throws {
-        let record = VectorRecord(id: id, vector: vector, metadata: metadata, timestamp: Date())
+    func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
+        let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
         vectors[id] = record
         try await saveToFile()
     }
@@ -38,7 +42,7 @@ public actor VectorStore {
     /// Store text by converting it to a vector using GloVe and save to file.
     func upsertText(id: String, text: String, metadata: [String: String]) async throws {
         let vector = embeddingService.embedText(text)
-        try await upsert(id: id, vector: vector, metadata: metadata)
+        try await upsert(id: id, vector: vector, text: text, metadata: metadata)
     }
     
     /// Get a vector by ID.
@@ -53,7 +57,7 @@ public actor VectorStore {
         // Calculate similarity with each stored vector
         for (id, record) in vectors {
             let similarity = vector.cosineOfAngle(with: record.vector)
-            matches.append(VectorMatch(id: id, score: similarity, metadata: record.metadata))
+            matches.append(VectorMatch(id: id, score: similarity, text: record.text, metadata: record.metadata))
         }
         
         // Sort by similarity (highest first) and return top K
@@ -89,14 +93,16 @@ public actor VectorStore {
     private func saveToFile() async throws {
         let records = Array(vectors.values)
         let data = try JSONEncoder().encode(records)
+        
         try data.write(to: URL(fileURLWithPath: dataFilePath))
+        logger.debug("Successfully saved \(records.count) vectors to \(dataFilePath)")
     }
     
     /// Load vectors from JSON file at startup.
     private func loadFromFile() async throws {
-        guard FileManager.default.fileExists(atPath: dataFilePath) else { 
-            print("No existing vectors file found, starting with empty database")
-            return 
+        guard FileManager.default.fileExists(atPath: dataFilePath) else {
+            logger.info("No existing vectors file found, starting with empty database..")
+            return
         }
         
         let data = try Data(contentsOf: URL(fileURLWithPath: dataFilePath))
@@ -106,6 +112,6 @@ public actor VectorStore {
             vectors[record.id] = record
         }
         
-        print("Loaded \(records.count) vectors from \(dataFilePath)")
+        logger.info("Loaded \(records.count) vectors from \(dataFilePath)")
     }
 }
