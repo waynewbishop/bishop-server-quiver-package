@@ -22,10 +22,10 @@ struct Entrypoint {
    static func main() async throws {
        let (app, serviceGroup) = try await configServer()
        
-       app.logger.notice("[QuiverDB] Starting service group. Press ctrl+c to shutdown")
+       app.logger.notice("Starting service group. Press ctrl+c to shutdown")
        try await serviceGroup.run()
        
-       app.logger.notice("[QuiverDB] Server shutdown completed successfully")
+       app.logger.notice("Server shutdown completed successfully")
    }
 }
 
@@ -78,6 +78,26 @@ func configServer() async throws -> (Application, ServiceGroup) {
     logger.info("Total documents: \(count)")  // Should show 3
     
     
+    let results = try await vectorStore.queryText(text: "cars", topK: 2)
+
+    for match in results {
+        print("ID: \(match.id)")
+        print("Score: \(match.score)")
+        print("Text: \(match.text)")
+        print("Metadata: \(match.metadata)")
+        print("---")
+    }
+    
+    //remove an vectorStore item
+    let result = try await vectorStore.removeAt(id: "doc1")
+    
+    if result {
+        logger.info("Deleted document 'doc1'")
+    } else {
+        logger.warning("Failed to delete document 'doc1'")
+    }
+    
+    
     // Add a simple test route so the server has something to serve
     app.get("health") { req in
         return "QuiverDB Server is running!"
@@ -91,7 +111,7 @@ func configServer() async throws -> (Application, ServiceGroup) {
         logger: logger
     )
     
-    logger.notice("[QuiverDB] Server configured, ready to start")
+    logger.notice("Server configured, ready to start")
     return (app, serviceGroup)
 }
 
