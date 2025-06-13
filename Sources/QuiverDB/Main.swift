@@ -73,9 +73,17 @@ func configServer() async throws -> (Application, ServiceGroup) {
         text: "roses and tulips are flowers",
         metadata: ["category": "plants"]
     )
+    
+    
+    try await vectorStore.upsertText(
+        id: "doc4",  // Different ID
+        text: "Addidas and Nike are sports brands",
+        metadata: ["category": "shoes"]
+    )
+    
 
     let count = await vectorStore.count()
-    logger.info("Total documents: \(count)")  // Should show 3
+    logger.info("Total documents: \(count)")
     
     
     let results = try await vectorStore.queryText(text: "cars", topK: 2)

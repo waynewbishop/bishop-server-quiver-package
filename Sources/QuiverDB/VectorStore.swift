@@ -15,12 +15,20 @@ import Foundation
 import Quiver
 import Logging
 
+/*
+ TODO: Complete unit testing on batch uosert process
+ TODO: Write unit tests excercising all vectorStore functionality
+ TODO: Revise openAPI spec and implement new APIHandlers
+ TODO: Write DocC documentation
+ */
+
 /// Simple vector database that stores vectors with basic CRUD operations and JSON persistence.
 public actor VectorStore {
 
     private var vectors: [String: VectorRecord] = [:]
     private let embeddingService: GloVeService
     private let dataFilePath: String = "vectors.json"
+    
     private let logger = Logger(label: "bishop.server.quiver.package")
     
     /// Initialize with a GloVe service and load existing vectors from file.
@@ -34,7 +42,7 @@ public actor VectorStore {
         return vectors.count
     }
     
-    // MARK: - Basic Upsert Operations
+    // MARK: - Upsert Operations
     
     /// Store a vector with metadata and save to file.
     func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
@@ -49,13 +57,34 @@ public actor VectorStore {
         try await upsert(id: id, vector: vector, text: text, metadata: metadata)
     }
     
+    
+    // MARK: - Batch Processing
+    
+    /// Provides process for uploading multiple documents in JSONL format
+    func batchUpsertTexts(_ documents: [(id: String, text: String, metadata: [String: String])]) async throws -> BatchResult {
+        var successes = 0
+        let failures: [String] = []
+         
+        for (id, text, metadata) in documents {
+            // Process immediately - simpler than async queues
+            let vector = embeddingService.embedText(text)
+            let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
+            vectors[id] = record
+            successes += 1
+         }
+         
+         try await saveToFile()
+         return BatchResult(successful: successes, failed: failures.count, errors: failures)
+    }
+    
+    
+    // MARK: Basic Query Operations
+    
     /// Get a vector by identifier.
     func get(id: String) async throws -> VectorRecord? {
         return vectors[id]
     }
-    
-    // MARK: Basic Query Operations
-    
+
     /// Find similar vectors using cosine similarity.
     func query(vector: [Double], topK: Int = 5) async throws -> [VectorMatch] {
         var matches: [VectorMatch] = []
@@ -143,23 +172,5 @@ public actor VectorStore {
         }
     }
     
-    // MARK: - Batch Processing
-    
-    /// Provides process for uploading multiple documents in JSONL format
-    func batchUpsertTexts(_ documents: [(id: String, text: String, metadata: [String: String])]) async throws -> BatchResult {
-        var successes = 0
-        let failures: [String] = []
-         
-        for (id, text, metadata) in documents {
-            // Process immediately - simpler than async queues
-            let vector = embeddingService.embedText(text)
-            let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
-            vectors[id] = record
-            successes += 1
-         }
-         
-         try await saveToFile()
-         return BatchResult(successful: successes, failed: failures.count, errors: failures)
-    }
      
 }
