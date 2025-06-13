@@ -27,4 +27,4 @@ xcuserdata/
 embeddings/
 *.vec
 glove.*.txt
-vectors.json
+*.json
