@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-runtime.git", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/swift-openapi-vapor.git", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
-        .package(url: "https://github.com/waynewbishop/bishop-algorithms-quiver-package.git", from: "1.0.0")
+        .package(url: "https://github.com/waynewbishop/bishop-algorithms-quiver-package.git", from: "1.0.0"),
     ],
     targets: [
         .executableTarget(
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],
             resources: [
-                    .copy("Resources")  // Include Resources directory
+                .copy("Resources/glove.6B.50d.txt") // or .copy() for exact copy
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")

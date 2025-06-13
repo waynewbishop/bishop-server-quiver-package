@@ -13,15 +13,42 @@
 
 import Foundation
 import Quiver
+import Vapor
 
+/// Service for converting text to vector embeddings using pre-trained GloVe word vectors.
+/// GloVe (Global Vectors) provides semantic representations where similar words have similar vectors.
 public final class GloVeService {
     private let embeddings: [String: [Double]]
     private let dimensions: Int
     
-    init(filePath: String) async throws {
-        let content = try String(contentsOfFile: filePath)
-        var loadedEmbeddings: [String: [Double]] = [:]
-        var detectedDimensions = 0
+    /// The total number of words in the loaded vocabulary.
+    /// Used for capacity planning and debugging embedding coverage.
+    var vocabularySize: Int {
+        embeddings.count
+    }
+        
+    /// Initializes the service by loading GloVe embeddings from the bundled text file.
+    /// Validates dimensional consistency and logs loading performance metrics.
+    init() async throws {
+        guard let url = Bundle.module.url(forResource: "glove.6B.50d", withExtension: "txt") else {
+            throw GloVeError.fileNotFound
+        }
+        
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let (loadedEmbeddings, detectedDimensions) = try Self.parse(content)
+        
+        self.embeddings = loadedEmbeddings
+        self.dimensions = detectedDimensions
+    }
+    
+    /// Parses GloVe text format into word-vector mappings with dimension validation.
+    /// Returns the embeddings dictionary and detected vector dimensionality.
+    private static func parse(_ content: String) throws -> ([String: [Double]], Int) {
+        let logger = Logger(label: "bishop.server.quiver.package")
+        
+        let startTime = Date()
+        var embeddings: [String: [Double]] = [:]
+        var dimensions = 0
         
         for line in content.components(separatedBy: .newlines) {
             let parts = line.split(separator: " ")
@@ -30,53 +57,35 @@ public final class GloVeService {
             let word = String(parts[0])
             let vector = parts.dropFirst().compactMap { Double($0) }
             
-            if detectedDimensions == 0 {
-                detectedDimensions = vector.count
-            }
+            if dimensions == 0 { dimensions = vector.count }
+            guard vector.count == dimensions else { continue }
             
-            guard vector.count == detectedDimensions else { continue }
-            loadedEmbeddings[word] = vector
+            embeddings[word] = vector
         }
         
-        self.embeddings = loadedEmbeddings
-        self.dimensions = detectedDimensions
+        let elapsed = Date().timeIntervalSince(startTime)
+        logger.info("GloVe parsing completed: \(embeddings.count) words with \(dimensions) dimensions in \(String(format: "%.2f", elapsed))s")
         
-        // Validate all embeddings have consistent dimensions using new Quiver function
-        let allVectors = Array(loadedEmbeddings.values)
-        guard allVectors.areValidVectorDimensions() else {
-            throw GloVeError.inconsistentDimensions
-        }
+        return (embeddings, dimensions)
     }
     
-    /// Convert text to vector using new Quiver averaged() function
+    /// Converts text to a vector by averaging embeddings of constituent words.
+    /// Unknown words are filtered out; returns zero vector if no words are found.
     func embedText(_ text: String) -> [Double] {
-        let words = text.lowercased()
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
+        let words = text.lowercased().components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        let wordVectors = words.compactMap { embeddings[$0] }
         
-        let wordVectors = words.compactMap { word in embeddings[word] }
+        guard !wordVectors.isEmpty else { return [Double].zeros(dimensions) }
         
-        guard !wordVectors.isEmpty else {
-            // Return zero vector if no words found
-            return [Double].zeros(dimensions)
+        return (0..<dimensions).map { i in
+            wordVectors.map { $0[i] }.mean() ?? 0.0
         }
-        
-        // Use new Quiver instance method for safe vector averaging
-        return wordVectors.averaged() ?? [Double].zeros(dimensions)
     }
     
-    /// Get embedding for a single word
-    func embedWord(_ word: String) -> [Double]? {
-        return embeddings[word.lowercased()]
-    }
-    
-    /// Get vocabulary size
-    var vocabularySize: Int {
-        return embeddings.count
-    }
 }
 
+/// Errors that can occur during GloVe service initialization and operation.
 enum GloVeError: Error {
-    case inconsistentDimensions
+    /// The GloVe embeddings file could not be found in the application bundle.
     case fileNotFound
 }

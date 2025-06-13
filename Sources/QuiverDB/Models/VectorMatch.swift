@@ -13,8 +13,9 @@
 
 import Foundation
 
-public struct VectorMatch: Codable {
+public struct VectorMatch: Codable, Sendable {
     let id: String
     let score: Double
+    let text: String
     let metadata: [String: String]
 }

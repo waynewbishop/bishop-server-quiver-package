@@ -13,10 +13,16 @@
 
 import Foundation
 
-public struct VectorRecord: Codable, Sendable {
-    let id: String
-    let vector: [Double]
-    let text: String
-    let metadata: [String: String]
+struct BatchResult: Codable {
+    let successful: Int
+    let failed: Int
+    let errors: [String]
     let timestamp: Date
+    
+    init(successful: Int, failed: Int, errors: [String]) {
+        self.successful = successful
+        self.failed = failed
+        self.errors = errors
+        self.timestamp = Date()
+    }
 }
