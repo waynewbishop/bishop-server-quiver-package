@@ -27,15 +27,16 @@ public actor VectorStore {
 
     private var vectors: [String: VectorRecord] = [:]
     private let embeddingService: GloVeService
-    private let dataFilePath: String = "vectors.json"
+    private let dataFilePath: String
     
     private let logger = Logger(label: "bishop.server.quiver.package")
     
-    /// Initialize with a GloVe service and load existing vectors from file.
-    init(embeddingService: GloVeService) async throws {
-        self.embeddingService = embeddingService
-        try await loadFromFile()
-    }
+    /// Initialize with a GloVe service and optional custom data file path.
+   init(embeddingService: GloVeService, dataFilePath: String = "vectors.json") async throws {
+       self.embeddingService = embeddingService
+       self.dataFilePath = dataFilePath  //set path from parameter
+       try await loadFromFile()
+   }
     
     /// Get total number of stored vectors.
     func count() async -> Int {
@@ -165,6 +166,7 @@ public actor VectorStore {
                 vectors[record.id] = record
             }
             
+            logger.info("VectorStore loaded successfully")
             logger.info("Loaded \(records.count) vectors")
             
         } catch {

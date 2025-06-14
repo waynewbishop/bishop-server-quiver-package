@@ -20,6 +20,7 @@ import Vapor
 public final class GloVeService {
     private let embeddings: [String: [Double]]
     private let dimensions: Int
+    private let logger = Logger(label: "bishop.server.quiver.package")
     
     /// The total number of words in the loaded vocabulary.
     /// Used for capacity planning and debugging embedding coverage.
@@ -30,9 +31,12 @@ public final class GloVeService {
     /// Initializes the service by loading GloVe embeddings from the bundled text file.
     /// Validates dimensional consistency and logs loading performance metrics.
     init() async throws {
+        
         guard let url = Bundle.module.url(forResource: "glove.6B.50d", withExtension: "txt") else {
             throw GloVeError.fileNotFound
         }
+        
+        logger.info("Loading GloVe embeddings...")
         
         let content = try String(contentsOf: url, encoding: .utf8)
         let (loadedEmbeddings, detectedDimensions) = try Self.parse(content)

@@ -5,9 +5,11 @@ import PackageDescription
 
 let package = Package(
     name: "QuiverDB",
-    platforms: [.macOS(.v13)],
+    platforms: [
+        .macOS(.v13)
+    ],
     products: [
-        .executable(name: "QuiverDB", targets: ["QuiverDB"])
+        .executable(name: "quiverdb", targets: ["QuiverDB"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
@@ -27,12 +29,22 @@ let package = Package(
                 .product(name: "OpenAPIVapor", package: "swift-openapi-vapor"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],
+            path: "Sources/QuiverDB",  // Explicitly specify path
             resources: [
-                .copy("Resources/glove.6B.50d.txt") // or .copy() for exact copy
+                .copy("Resources/")
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
             ]
+        ),
+        .testTarget(
+            name: "QuiverDBTests",
+            dependencies: [
+                "QuiverDB",  // Reference to the main target
+                .product(name: "XCTVapor", package: "vapor"),
+                .product(name: "Quiver", package: "bishop-algorithms-quiver-package")
+            ],
+            path: "Tests/QuiverDBTests"  // Explicitly specify test path
         )
     ]
 )
