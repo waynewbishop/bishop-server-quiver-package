@@ -12,8 +12,6 @@
 // permissions and limitations under the License.
 
 import Vapor
-import OpenAPIRuntime
-import OpenAPIVapor
 import Logging
 import ServiceLifecycle
 

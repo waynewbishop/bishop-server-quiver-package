@@ -18,7 +18,6 @@ import Logging
 /*
  TODO: Complete unit testing on batch uosert process
  TODO: Write unit tests excercising all vectorStore functionality
- TODO: Revise openAPI spec and implement new APIHandlers
  TODO: Write DocC documentation
  */
 

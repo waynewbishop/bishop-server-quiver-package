@@ -11,6 +11,9 @@ DerivedData/
 # Xcode
 xcuserdata/
 
+# IDE files (Cursor/VS Code)
+.vscode/
+
 # macOS
 .DS_Store
 

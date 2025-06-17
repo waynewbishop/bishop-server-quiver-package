@@ -17,7 +17,7 @@ import Vapor
 
 /// Service for converting text to vector embeddings using pre-trained GloVe word vectors.
 /// GloVe (Global Vectors) provides semantic representations where similar words have similar vectors.
-public final class GloVeService {
+public final class GloVeService: Sendable {
     private let embeddings: [String: [Double]]
     private let dimensions: Int
     private let logger = Logger(label: "bishop.server.quiver.package")
@@ -30,10 +30,11 @@ public final class GloVeService {
         
     /// Initializes the service by loading GloVe embeddings from the bundled text file.
     /// Validates dimensional consistency and logs loading performance metrics.
-    init() async throws {
+
+    init() throws { 
         
         guard let url = Bundle.module.url(forResource: "glove.6B.50d", withExtension: "txt") else {
-            throw GloVeError.fileNotFound
+          throw GloVeError.fileNotFound
         }
         
         logger.info("Loading GloVe embeddings...")
