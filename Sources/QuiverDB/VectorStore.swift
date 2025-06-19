@@ -16,8 +16,8 @@ import Quiver
 import Logging
 
 /*
- TODO: Complete unit testing on batch uosert process
- TODO: Write unit tests excercising all vectorStore functionality
+ TODO: Complete unit testing on batch upsert process
+ TODO: Write unit tests exercising all vectorStore functionality
  TODO: Write DocC documentation
  */
 
@@ -31,62 +31,71 @@ public actor VectorStore {
     private let logger = Logger(label: "bishop.server.quiver.package")
     
     /// Initialize with a GloVe service and optional custom data file path.
-   init(embeddingService: GloVeService, dataFilePath: String = "vectors.json") async throws {
-       self.embeddingService = embeddingService
-       self.dataFilePath = dataFilePath  //set path from parameter
-       try await loadFromFile()
-   }
-    
-    /// Get total number of stored vectors.
-    func count() async -> Int {
-        return vectors.count
+    init(embeddingService: GloVeService, dataFilePath: String = "vectors.json") async throws {
+        self.embeddingService = embeddingService
+        self.dataFilePath = dataFilePath
+        try await loadFromFile()
     }
     
-    // MARK: - Upsert Operations
+    // MARK: - Synchronous Properties and Simple State Access
     
-    /// Store a vector with metadata and save to file.
+    /// Total number of stored vectors
+    var count: Int {
+        vectors.count
+    }
+    
+    /// Whether the store contains any vectors
+    var isEmpty: Bool {
+        vectors.isEmpty
+    }
+    
+    /// Check if a vector exists without retrieving it
+    func exists(id: String) -> Bool {
+        vectors[id] != nil
+    }
+    
+    // MARK: - Asynchronous Upsert Operations
+    
+    /// Store a vector with metadata and save to file
     func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
         let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
         vectors[id] = record
         try await saveToFile()
     }
     
-    /// Store text by converting it to a vector using GloVe and save to file.
+    /// Store text by converting it to a vector using GloVe and save to file
     func upsertText(id: String, text: String, metadata: [String: String]) async throws {
         let vector = embeddingService.embedText(text)
         try await upsert(id: id, vector: vector, text: text, metadata: metadata)
     }
     
-    
     // MARK: - Batch Processing
     
-    /// Provides process for uploading multiple documents in JSONL format
+    /// Process multiple documents efficiently with single persistence call
     func batchUpsertTexts(_ documents: [(id: String, text: String, metadata: [String: String])]) async throws -> BatchResult {
         var successes = 0
         let failures: [String] = []
          
         for (id, text, metadata) in documents {
-            // Process immediately - simpler than async queues
             let vector = embeddingService.embedText(text)
             let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
             vectors[id] = record
             successes += 1
-         }
+        }
          
-         try await saveToFile()
-         return BatchResult(successful: successes, failed: failures.count, errors: failures)
+        try await saveToFile()
+        return BatchResult(successful: successes, failed: failures.count, errors: failures)
     }
     
+    // MARK: - Asynchronous Query Operations
     
-    // MARK: Basic Query Operations
-    
-    /// Get a vector by identifier.
-    func get(id: String) async throws -> VectorRecord? {
+    /// Get a vector by identifier
+    func get(id: String) async -> VectorRecord? {
         return vectors[id]
     }
 
-    /// Find similar vectors using cosine similarity.
-    func query(vector: [Double], topK: Int = 5) async throws -> [VectorMatch] {
+    /// Find similar vectors using cosine similarity
+    func query(vector: [Double], topK: Int = 5) async -> [VectorMatch] {
         var matches: [VectorMatch] = []
         
         // Calculate similarity with each stored vector
@@ -102,21 +111,20 @@ public actor VectorStore {
             .map { $0 }
     }
 
-
-    /// Search for similar text using semantic similarity.
-    func queryText(text: String, topK: Int = 10) async throws -> [VectorMatch] {
+    /// Search for similar text using semantic similarity
+    func queryText(text: String, topK: Int = 10) async -> [VectorMatch] {
         let queryVector = embeddingService.embedText(text)
-        return try await self.query(vector: queryVector, topK: topK)
+        return await query(vector: queryVector, topK: topK)
     }
     
-    ///Returns all vector records
-    func queryAll() async throws -> [VectorRecord] {
+    /// Returns all vector records
+    func queryAll() async -> [VectorRecord] {
         return Array(vectors.values)
     }
     
-    //MARK: Basic Delete Operations
+    // MARK: - Asynchronous Delete Operations
     
-    /// Delete a vector based on its identifier and save to file.
+    /// Delete a vector based on its identifier and save to file
     func removeAt(id: String) async throws -> Bool {
         let existed = vectors.removeValue(forKey: id) != nil
         if existed {
@@ -125,17 +133,20 @@ public actor VectorStore {
         return existed
     }
     
-    
-    // Delete all vector records
+    /// Delete all vector records
     func removeAll() async throws {
+        let wasEmpty = vectors.isEmpty
         vectors.removeAll()
-        try await saveToFile()
+        
+        // Only save if there were actually vectors to remove
+        if !wasEmpty {
+            try await saveToFile()
+        }
     }
-    
     
     // MARK: - Basic Persistence
     
-    /// Save all vectors to JSON file.
+    /// Save all vectors to JSON file
     private func saveToFile() async throws {
         
         do {
@@ -143,15 +154,15 @@ public actor VectorStore {
             let data = try JSONEncoder().encode(records)
             try data.write(to: URL(fileURLWithPath: dataFilePath))
             logger.debug("Successfully saved \(records.count) vectors")
-            
         } catch {
             logger.error("Failed to save vectors: \(error)")
+            throw error
         }
     }
     
-    /// Load vectors from JSON file at startup.
+    /// Load vectors from JSON file at startup
     private func loadFromFile() async throws {
-        
+
         guard FileManager.default.fileExists(atPath: dataFilePath) else {
             logger.info("No existing vectors file found, starting with empty database")
             return
@@ -167,11 +178,9 @@ public actor VectorStore {
             
             logger.info("VectorStore loaded successfully")
             logger.info("Loaded \(records.count) vectors")
-            
         } catch {
             logger.error("Failed to load vectors, starting with empty database: \(error)")
+            throw error
         }
     }
-    
-     
 }
