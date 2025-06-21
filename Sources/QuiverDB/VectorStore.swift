@@ -32,6 +32,7 @@ public actor VectorStore {
     
     /// Initialize with a GloVe service and optional custom data file path.
     init(embeddingService: GloVeService, dataFilePath: String = "vectors.json") async throws {
+
         self.embeddingService = embeddingService
         self.dataFilePath = dataFilePath
         try await loadFromFile()
@@ -58,6 +59,7 @@ public actor VectorStore {
     
     /// Store a vector with metadata and save to file
     func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
+
         let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
         vectors[id] = record
         try await saveToFile()
@@ -65,6 +67,7 @@ public actor VectorStore {
     
     /// Store text by converting it to a vector using GloVe and save to file
     func upsertText(id: String, text: String, metadata: [String: String]) async throws {
+
         let vector = embeddingService.embedText(text)
         try await upsert(id: id, vector: vector, text: text, metadata: metadata)
     }
@@ -73,6 +76,7 @@ public actor VectorStore {
     
     /// Process multiple documents efficiently with single persistence call
     func batchUpsertTexts(_ documents: [(id: String, text: String, metadata: [String: String])]) async throws -> BatchResult {
+
         var successes = 0
         let failures: [String] = []
          
@@ -96,6 +100,7 @@ public actor VectorStore {
 
     /// Find similar vectors using cosine similarity
     func query(vector: [Double], topK: Int = 5) async -> [VectorMatch] {
+
         var matches: [VectorMatch] = []
         
         // Calculate similarity with each stored vector
@@ -113,6 +118,7 @@ public actor VectorStore {
 
     /// Search for similar text using semantic similarity
     func queryText(text: String, topK: Int = 10) async -> [VectorMatch] {
+
         let queryVector = embeddingService.embedText(text)
         return await query(vector: queryVector, topK: topK)
     }
@@ -126,6 +132,7 @@ public actor VectorStore {
     
     /// Delete a vector based on its identifier and save to file
     func removeAt(id: String) async throws -> Bool {
+        
         let existed = vectors.removeValue(forKey: id) != nil
         if existed {
             try await saveToFile()
@@ -135,6 +142,7 @@ public actor VectorStore {
     
     /// Delete all vector records
     func removeAll() async throws {
+
         let wasEmpty = vectors.isEmpty
         vectors.removeAll()
         
@@ -154,6 +162,7 @@ public actor VectorStore {
             let data = try JSONEncoder().encode(records)
             try data.write(to: URL(fileURLWithPath: dataFilePath))
             logger.debug("Successfully saved \(records.count) vectors")
+            
         } catch {
             logger.error("Failed to save vectors: \(error)")
             throw error
