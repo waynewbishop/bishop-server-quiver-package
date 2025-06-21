@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 
 import XCTest
-@testable import QuiverDBApp
+@testable import QuiverDB
 
 
 /// Global actor that safely manages the expensive GloVe embedding service across all tests.

@@ -7,7 +7,7 @@ let package = Package(
     name: "QuiverDB",
     platforms: [.macOS(.v13)],
     products: [
-        .executable(name: "quiverdb", targets: ["QuiverDBApp"])  // Fixed reference
+        .executable(name: "quiverdb", targets: ["QuiverDB"])  
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
@@ -16,7 +16,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "QuiverDBApp",  // This target exists
+            name: "QuiverDB",  
             dependencies: [
                 .product(name: "Quiver", package: "bishop-algorithms-quiver-package"),
                 .product(name: "Vapor", package: "vapor"),
@@ -26,8 +26,8 @@ let package = Package(
             resources: [.copy("Resources/")]
         ),
         .testTarget(
-            name: "QuiverDBTests",  // This target exists
-            dependencies: ["QuiverDBApp"],  // Reference the actual target name
+            name: "QuiverDBTests",  
+            dependencies: ["QuiverDB"],  // product executable dependency
             path: "Tests/QuiverDBTests"
         )
     ]

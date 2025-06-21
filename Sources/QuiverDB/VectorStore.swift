@@ -16,9 +16,10 @@ import Quiver
 import Logging
 
 /*
- TODO: Complete unit testing on batch upsert process
- TODO: Write unit tests exercising all vectorStore functionality
- TODO: Write DocC documentation
+    TODO: Reinstate openAPI specifcation, settings and configuration
+    TODO: Create new handler for VectorStore functionality (VectorHandler) 
+    TODO: Find out how to install and configure JaegerUI
+    TODO: Write DocC documentation
  */
 
 /// Simple vector database that stores vectors with basic CRUD operations and JSON persistence.

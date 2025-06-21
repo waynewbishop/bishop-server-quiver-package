@@ -1,0 +1,581 @@
+openapi: 3.0.3
+info:
+  title: QuiverDB Vector Database API
+  description: |
+    QuiverDB is a Swift-native vector database providing semantic search, similarity matching, 
+    and recommendation capabilities built on the Quiver mathematical framework.
+    
+    ## Features
+    - Semantic text search using GloVe embeddings
+    - Vector similarity search with cosine similarity
+    - Batch document processing
+    - Mathematical transparency through Quiver operations
+    
+  version: 1.0.0
+  contact:
+    name: Wayne W Bishop
+    url: https://github.com/waynewbishop/QuiverDB
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.quiverdb.com
+    description: Production server
+
+paths:
+  /vectors/count:
+    get:
+      summary: Get total vector count
+      description: Returns the total number of vectors stored in the database
+      operationId: getVectorCount
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Vector count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 1250
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-01-20T10:30:00Z"
+
+  /vectors/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier for the vector
+        schema:
+          type: string
+          example: "doc_001"
+
+    head:
+      summary: Check if vector exists
+      description: Check whether a vector with the specified ID exists without retrieving it
+      operationId: checkVectorExists
+      tags:
+        - Vectors
+      responses:
+        '200':
+          description: Vector exists
+        '404':
+          description: Vector not found
+
+    get:
+      summary: Retrieve vector by ID
+      description: Get a specific vector record including its embedding, text, and metadata
+      operationId: getVector
+      tags:
+        - Vectors
+      responses:
+        '200':
+          description: Vector retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorRecord'
+        '404':
+          description: Vector not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Store or update vector
+      description: Store a vector with manually provided embedding values
+      operationId: upsertVector
+      tags:
+        - Vectors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vector
+                - text
+              properties:
+                vector:
+                  type: array
+                  items:
+                    type: number
+                    format: double
+                  description: Pre-computed vector embedding
+                  example: [0.1, -0.2, 0.8, 0.3, -0.1]
+                text:
+                  type: string
+                  description: Original text content
+                  example: "Machine learning algorithms for data analysis"
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Additional key-value metadata
+                  example:
+                    category: "technical"
+                    author: "john_doe"
+                    source: "research_paper"
+      responses:
+        '200':
+          description: Vector updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorRecord'
+        '201':
+          description: Vector created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorRecord'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete vector
+      description: Remove a vector from the database
+      operationId: deleteVector
+      tags:
+        - Vectors
+      responses:
+        '200':
+          description: Vector deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                    example: true
+                  id:
+                    type: string
+                    example: "doc_001"
+        '404':
+          description: Vector not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vectors/{id}/text:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier for the vector
+        schema:
+          type: string
+          example: "doc_001"
+
+    put:
+      summary: Store text as vector
+      description: Store text content by automatically converting it to a vector using GloVe embeddings
+      operationId: upsertTextAsVector
+      tags:
+        - Vectors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: Text content to be embedded
+                  example: "Artificial intelligence and machine learning revolutionize data processing"
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Additional key-value metadata
+                  example:
+                    category: "ai"
+                    topic: "machine_learning"
+                    difficulty: "intermediate"
+      responses:
+        '200':
+          description: Text vector updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorRecord'
+        '201':
+          description: Text vector created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorRecord'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vectors/search:
+    post:
+      summary: Semantic text search
+      description: |
+        Search for similar content using semantic similarity. Text is automatically 
+        converted to vectors using GloVe embeddings and compared using cosine similarity.
+      operationId: searchByText
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: Search query text
+                  example: "machine learning algorithms"
+                topK:
+                  type: integer
+                  description: Number of top results to return
+                  default: 10
+                  minimum: 1
+                  maximum: 100
+                  example: 5
+                threshold:
+                  type: number
+                  format: double
+                  description: Minimum similarity score (0.0 to 1.0)
+                  default: 0.0
+                  minimum: 0.0
+                  maximum: 1.0
+                  example: 0.7
+      responses:
+        '200':
+          description: Search completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    example: "machine learning algorithms"
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VectorMatch'
+                  count:
+                    type: integer
+                    example: 5
+                  execution_time_ms:
+                    type: number
+                    format: double
+                    example: 23.5
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vectors/query:
+    post:
+      summary: Vector similarity search
+      description: |
+        Search for similar vectors using a pre-computed embedding vector. 
+        Uses cosine similarity for mathematical precision.
+      operationId: searchByVector
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vector
+              properties:
+                vector:
+                  type: array
+                  items:
+                    type: number
+                    format: double
+                  description: Query vector embedding
+                  example: [0.2, -0.1, 0.8, 0.3, -0.5]
+                topK:
+                  type: integer
+                  description: Number of top results to return
+                  default: 5
+                  minimum: 1
+                  maximum: 100
+                  example: 10
+                threshold:
+                  type: number
+                  format: double
+                  description: Minimum similarity score (0.0 to 1.0)
+                  default: 0.0
+                  minimum: 0.0
+                  maximum: 1.0
+                  example: 0.8
+      responses:
+        '200':
+          description: Vector search completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VectorMatch'
+                  count:
+                    type: integer
+                    example: 10
+                  execution_time_ms:
+                    type: number
+                    format: double
+                    example: 15.2
+        '400':
+          description: Invalid vector dimensions or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vectors/batch:
+    post:
+      summary: Batch upload documents
+      description: |
+        Upload multiple text documents efficiently in a single request. 
+        Each document is automatically converted to vectors using GloVe embeddings.
+      operationId: batchUploadDocuments
+      tags:
+        - Batch Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documents
+              properties:
+                documents:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - text
+                    properties:
+                      id:
+                        type: string
+                        description: Unique identifier for the document
+                        example: "article_123"
+                      text:
+                        type: string
+                        description: Document text content
+                        example: "Natural language processing enables computers to understand human language"
+                      metadata:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: Additional document metadata
+                        example:
+                          category: "nlp"
+                          author: "researcher"
+                          date: "2025-01-20"
+          application/x-ndjson:
+            schema:
+              type: string
+              description: |
+                Newline-delimited JSON format for streaming large batches.
+                Each line should be a JSON object with id, text, and optional metadata.
+              example: |
+                {"id": "doc1", "text": "First document content", "metadata": {"type": "article"}}
+                {"id": "doc2", "text": "Second document content", "metadata": {"type": "blog"}}
+      responses:
+        '200':
+          description: Batch upload completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResult'
+        '400':
+          description: Invalid batch request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Batch size too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    VectorRecord:
+      type: object
+      required:
+        - id
+        - vector
+        - text
+        - metadata
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the vector
+          example: "doc_001"
+        vector:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Vector embedding (50 dimensions for GloVe)
+          example: [0.1, -0.2, 0.8, 0.3, -0.1]
+        text:
+          type: string
+          description: Original text content
+          example: "Machine learning algorithms for data analysis"
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value metadata pairs
+          example:
+            category: "technical"
+            author: "john_doe"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the vector was created or last updated
+          example: "2025-01-20T10:30:00Z"
+
+    VectorMatch:
+      type: object
+      required:
+        - id
+        - score
+        - text
+        - metadata
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the matched vector
+          example: "doc_042"
+        score:
+          type: number
+          format: double
+          description: Cosine similarity score (0.0 to 1.0, higher is more similar)
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.8765
+        text:
+          type: string
+          description: Original text content of the matched document
+          example: "Deep learning neural networks for pattern recognition"
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Metadata associated with the matched document
+          example:
+            category: "ai"
+            difficulty: "advanced"
+
+    BatchResult:
+      type: object
+      required:
+        - successful
+        - failed
+        - errors
+        - timestamp
+      properties:
+        successful:
+          type: integer
+          description: Number of documents successfully processed
+          example: 95
+        failed:
+          type: integer
+          description: Number of documents that failed to process
+          example: 5
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages for failed documents
+          example: ["Document doc_123: Text too short", "Document doc_456: Invalid metadata format"]
+        timestamp:
+          type: string
+          format: date-time
+          description: When the batch operation completed
+          example: "2025-01-20T10:35:00Z"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type or code
+          example: "VECTOR_NOT_FOUND"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Vector with ID 'doc_001' does not exist"
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-20T10:30:00Z"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+tags:
+  - name: Vectors
+    description: Core vector storage and retrieval operations
+  - name: Search
+    description: Semantic and vector similarity search operations
+  - name: Batch Operations
+    description: Bulk processing operations for efficiency
+  - name: Statistics
+    description: Database statistics and monitoring
+
+# Uncomment to implement endpoint authentication
+# security:
+#  - ApiKeyAuth: []

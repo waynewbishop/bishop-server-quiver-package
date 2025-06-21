@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 
 import XCTest
-@testable import QuiverDBApp
+@testable import QuiverDB
 
 
 //Per-test instances - deliberately not static to ensure test isolation
