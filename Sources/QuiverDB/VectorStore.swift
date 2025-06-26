@@ -16,9 +16,9 @@ import Quiver
 import Logging
 
 /*
-    TODO: Reinstate openAPI specifcation, settings and configuration
-    TODO: Create new handler for VectorStore functionality (VectorHandler) 
-    TODO: Find out how to install and configure JaegerUI
+    TODO: Build Vapor routes for VectorStore
+    TODO: Implement Swift-Otel for metrics
+    TODO: Write, test and deploy and implement Docker 
     TODO: Write DocC documentation
  */
 

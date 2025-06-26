@@ -12,8 +12,9 @@
 // permissions and limitations under the License.
 
 import Foundation
+import Vapor
 
-struct BatchResult: Codable {
+struct BatchResult: Content, Sendable {
     let successful: Int
     let failed: Int
     let errors: [String]
