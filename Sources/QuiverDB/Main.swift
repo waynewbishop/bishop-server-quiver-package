@@ -12,7 +12,6 @@
 // permissions and limitations under the License.
 
 import Vapor
-import Logging
 import ServiceLifecycle
 
 @main
@@ -41,15 +40,24 @@ func configServer() async throws -> (Application, ServiceGroup) {
     let logger = Logger(label: "bishop.server.quiver.package")
     let app = try await Vapor.Application.make()
     
+    // Create the GloVe container with loaded services
+    logger.info("Loading GloVe services...")
+    let gloVeContainer = try await GloVeContainer()  // Updated name
+    
+    // Store it using the new key name
+    app.storage[GloVeKey.self] = gloVeContainer  // Updated key name
+    
     // Configure middleware
     app.middleware.use(LoggingMiddleware(logger: logger))
     app.middleware.use(ErrorHandlingMiddleware())
-        
-    // Add a simple test route so the server has something to serve
+    
     app.get("health") { req in
-        return "QuiverDB Server is running!"
+        guard let container = req.application.storage[GloVeKey.self] else {
+            throw Abort(.serviceUnavailable, reason: "GloVe services not ready")
+        }    
+        return "QuiverDB Server is running! Vocabulary: \(container.embeddingService.vocabularySize) words"    
     }
-            
+    
     let serverService = ServerService(app: app)
     let serviceGroup = ServiceGroup(
         services: [serverService],
@@ -58,7 +66,7 @@ func configServer() async throws -> (Application, ServiceGroup) {
         logger: logger
     )
     
-    logger.notice("Server configured, ready to start")
+    logger.notice("Server configured with loaded GloVe services, ready to start")
     return (app, serviceGroup)
-}
 
+} //end function

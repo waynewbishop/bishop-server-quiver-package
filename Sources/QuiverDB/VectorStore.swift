@@ -59,7 +59,7 @@ public actor VectorStore {
     // MARK: - Asynchronous Upsert Operations
     
     /// Store a vector with metadata and save to file
-    func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
+    func upsert(id: String, vector: [Double], text: String, metadata: [String: String] = [:]) async throws {
 
         let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
         vectors[id] = record
