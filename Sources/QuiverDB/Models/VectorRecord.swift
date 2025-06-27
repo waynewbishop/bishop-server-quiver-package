@@ -12,8 +12,9 @@
 // permissions and limitations under the License.
 
 import Foundation
+import Vapor
 
-public struct VectorRecord: Codable, Sendable {
+public struct VectorRecord: Content, Sendable {
     let id: String
     let vector: [Double]
     let text: String

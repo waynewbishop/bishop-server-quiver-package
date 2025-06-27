@@ -14,16 +14,13 @@
 import Foundation
 import Vapor
 
-struct BatchResult: Content, Sendable {
-    let successful: Int
-    let failed: Int
-    let errors: [String]
-    let timestamp: Date
-    
-    init(successful: Int, failed: Int, errors: [String]) {
-        self.successful = successful
-        self.failed = failed
-        self.errors = errors
-        self.timestamp = Date()
-    }
+struct UpsertVectorRequest: Content, Sendable {
+    let vector: [Double]
+    let text: String
+    let metadata: [String: String]?
+}
+
+struct UpsertTextRequest: Content, Sendable {
+    let text: String
+    let metadata: [String: String]?
 }

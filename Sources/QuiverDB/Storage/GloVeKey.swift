@@ -14,16 +14,7 @@
 import Foundation
 import Vapor
 
-struct BatchResult: Content, Sendable {
-    let successful: Int
-    let failed: Int
-    let errors: [String]
-    let timestamp: Date
-    
-    init(successful: Int, failed: Int, errors: [String]) {
-        self.successful = successful
-        self.failed = failed
-        self.errors = errors
-        self.timestamp = Date()
-    }
+struct GloVeKey: StorageKey {
+    // Provides a distinct value for the service container
+    typealias Value = GloVeContainer
 }

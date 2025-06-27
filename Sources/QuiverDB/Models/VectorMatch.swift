@@ -12,8 +12,9 @@
 // permissions and limitations under the License.
 
 import Foundation
+import Vapor
 
-public struct VectorMatch: Codable, Sendable {
+public struct VectorMatch: Content, Sendable {
     let id: String
     let score: Double
     let text: String

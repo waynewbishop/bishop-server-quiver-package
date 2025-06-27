@@ -16,9 +16,9 @@ import Quiver
 import Logging
 
 /*
-    TODO: Reinstate openAPI specifcation, settings and configuration
-    TODO: Create new handler for VectorStore functionality (VectorHandler) 
-    TODO: Find out how to install and configure JaegerUI
+    TODO: Build Vapor routes for VectorStore
+    TODO: Implement Swift-Otel for metrics
+    TODO: Write, test and deploy and implement Docker 
     TODO: Write DocC documentation
  */
 
@@ -59,7 +59,7 @@ public actor VectorStore {
     // MARK: - Asynchronous Upsert Operations
     
     /// Store a vector with metadata and save to file
-    func upsert(id: String, vector: [Double], text: String, metadata: [String: String]) async throws {
+    func upsert(id: String, vector: [Double], text: String, metadata: [String: String] = [:]) async throws {
 
         let record = VectorRecord(id: id, vector: vector, text: text, metadata: metadata, timestamp: Date())
         vectors[id] = record
