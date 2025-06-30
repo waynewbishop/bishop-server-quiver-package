@@ -19,6 +19,11 @@ public final class GloVeContainer: Sendable {
     private let _embeddingService: GloVeService
     private let logger = Logger(label: "bishop.server.quiver.package.container")
     
+    /// Provides access to the shared embedding service
+    var embeddingService: GloVeService {
+        _embeddingService
+    }
+
     /// Initialize all services during application startup
     init() async throws {
         logger.info("Initializing service container...")
@@ -31,8 +36,4 @@ public final class GloVeContainer: Sendable {
         logger.info("Service container ready in \(String(format: "%.2f", elapsed))s")
     }
     
-    /// Provides access to the shared embedding service
-    var embeddingService: GloVeService {
-        _embeddingService
-    }
 }

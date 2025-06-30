@@ -36,27 +36,34 @@ struct ServerService: Service {
 }
 
 
-func configServer() async throws -> (Application, ServiceGroup) {
+func configServer() async throws -> (Application, ServiceGroup) {    
     let logger = Logger(label: "bishop.server.quiver.package")
     let app = try await Vapor.Application.make()
     
     // Create the GloVe container with loaded services
     logger.info("Loading GloVe services...")
-    let gloVeContainer = try await GloVeContainer()  // Updated name
-    
+    let gloVeContainer = try await GloVeContainer()  
+
     // Store it using the new key name
-    app.storage[GloVeKey.self] = gloVeContainer  // Updated key name
-    
+    app.storage[GloVeKey.self] = gloVeContainer  
+
     // Configure middleware
     app.middleware.use(LoggingMiddleware(logger: logger))
     app.middleware.use(ErrorHandlingMiddleware())
     
+    // Register routes
+    let vectorRoutes = VectorRoutes(container: gloVeContainer)
+    vectorRoutes.routes(app)  // This registers all the routes
+    
+    // Add health check route
     app.get("health") { req in
         guard let container = req.application.storage[GloVeKey.self] else {
-            throw Abort(.serviceUnavailable, reason: "GloVe services not ready")
-        }    
-        return "QuiverDB Server is running! Vocabulary: \(container.embeddingService.vocabularySize) words"    
+            throw Abort(.serviceUnavailable, reason: "GloVe services not ready..")
+        }
+        
+        return "QuiverDB Server is running! Vocabulary: \(container.embeddingService.vocabularySize) words"
     }
+
     
     let serverService = ServerService(app: app)
     let serviceGroup = ServiceGroup(
