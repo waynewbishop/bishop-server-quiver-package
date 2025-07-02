@@ -11,8 +11,19 @@
 // ANY KIND, either express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-import Vapor
 import ServiceLifecycle
+import Foundation
+import Vapor
+
+/*
+    TODO: Build Vapor routes for VectorStore
+    TODO: Write client-side unit tests for testing VaporRoutes.swift
+    TODO: Implement Swift-Otel for metrics
+    TODO: Write, test and deploy and implement Docker 
+    TODO: Write DocC documentation
+    TODO: Write Medium articles (ask Claude for content strategy)
+ */
+
 
 @main
 struct Entrypoint {

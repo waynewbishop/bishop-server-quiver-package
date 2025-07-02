@@ -27,8 +27,40 @@ final class VectorRoutes: Sendable {
         app.get("vectors", ":id") { req in
             try await self.getVector(req: req)
         }
+
+        app.post("vectors", "query") { req in  
+           try await self.queryByVector(req: req)
+        }
     }
     
+
+    func queryByVector(req: Request) async throws -> VectorQueryResponse {
+        // POST requests have JSON in the body, not parameters
+        let request = try req.content.decode(VectorQueryRequest.self)
+
+        // Create VectorStore using stored container
+        let vectorStore = try await VectorStore(
+            embeddingService: container.embeddingService,
+            dataFilePath: self.path
+        )
+
+        // Identify parameters and pass to vectorStore
+        let topK = request.topK ?? 5
+        let startTime = Date()
+        let vectorMatch = await vectorStore.query(vector: request.vector, topK: topK)
+        let executionTime = Date().timeIntervalSince(startTime) * 1000  // Convert to milliseconds
+
+        let response = VectorQueryResponse(
+            results: vectorMatch, 
+            time: Date(), 
+            executionTimeMs: executionTime, 
+            count: vectorMatch.count
+        )
+
+        return response
+    }
+
+
     func getVector(req: Request) async throws -> VectorRecord {
         guard let id = req.parameters.get("id") else {
             throw Abort(.badRequest, reason: "Missing vector ID")

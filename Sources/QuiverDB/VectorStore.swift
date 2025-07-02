@@ -15,13 +15,6 @@ import Foundation
 import Quiver
 import Logging
 
-/*
-    TODO: Build Vapor routes for VectorStore
-    TODO: Implement Swift-Otel for metrics
-    TODO: Write, test and deploy and implement Docker 
-    TODO: Write DocC documentation
- */
-
 /// Simple vector database that stores vectors with basic CRUD operations and JSON persistence.
 public actor VectorStore {
 
